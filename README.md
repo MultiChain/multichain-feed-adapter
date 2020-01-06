@@ -1,13 +1,13 @@
 MultiChain Feed Adapter
 =======================
 
-[MultiChain Enterprise](https://www.multichain.com/enterprise/) feeds are real-time event logs that make it easy to reflect the contents of a blockchain to any external database. The [MultiChain Feed Adapter](https://github.com/MultiChain/multichain-feed-adapter) is a free and open source Python tool for reading these feeds and and includes support for several popular databases.
+[MultiChain Enterprise](https://www.multichain.com/enterprise/) feeds are real-time event logs that make it easy to reflect the contents of a blockchain (including unconfirmed transactions) to any external database. The [MultiChain Feed Adapter](https://github.com/MultiChain/multichain-feed-adapter) is a free and open source Python tool for reading these feeds and includes support for several popular databases.
 
-You are free to modify this adapter for your own purposes, including:
+This adapter is licensed under the 3-clause BSD license, which is very liberal. You are free to fork and modify this adapter for your own purposes, including:
 
 * Adding support for additional databases.
-* Adding a filter to only write some records to the database.
-* Adding logic to transform the data before it is written.
+* Modifying the code to only write some records to the database.
+* Adding logic to transform data before it is written.
 
 
 System Requirements
@@ -96,6 +96,6 @@ Modifying the Adapter
 
 To add support for a new database, make a copy of `output-usertype.py` called `output-whatever.py` (replacing `whatever` with your database name) and start modifying it. There are comments within the file which provide guidance on where to add your code for initializing the database and processing the different types of events. You can also read the code for other databases such as `output-postgres.py` to see detailed examples.
 
-Reference your `output-whatever.py` file in an output section of the `.ini` file by setting `type = whatever`. All other parameters in the same output section are easily accessed by your code. If the `type` in the `.ini` file contains a hyphen (`-`), only the text before the hyphen determines the `.py` file loaded.
+Reference your `output-whatever.py` file in an output section of the `.ini` file by setting `type = whatever`. All other parameters in the same output section are easily accessed by your code. If the `type` in the `.ini` file contains a hyphen (`-`), only the text before the hyphen determines the `output-...py` file loaded.
 
-You can also make copies of the code for supported databases and modify it for your needs. For example, you might only need to write certain types of stream items to the database, or might want to perform some transformation on the data before it is written.
+You can also make copies of the code for supported databases and modify it for your needs. For example, you might only need to write certain types of stream items to the database, or perform some transformation on the data before it is written.
