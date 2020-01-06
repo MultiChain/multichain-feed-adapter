@@ -14,21 +14,23 @@ class AdapterOutput(cfg.BaseOutput):
     def initialize(self):
         """
             Class initialization.
-            This class is implemented to do nothing except updating feed read pointer.
-            Updating feed read pointer is required, otherwise adapter will try to
+            This class is implemented to do nothing except updating the feed read pointer.
+            Updating feed read pointer is required, otherwise the adapter will try to
             send records to this class infinitely.
-            Feed read pointer is stored in the file in this template.
+            The feed read pointer is stored in a file in this example.
     
             The following operations should be performed in this method:
             
-            1. Check all required fields in .ini file are present
-               Set default values if needed.
-            2. Read feed read pointer.
+            1. Check all required fields in the .ini file are present and set default values if needed.
+            2. Read the feed read pointer.
             3. Make custom intitializations if necessary.
         """
     
         if not readconf.check_file_config(self.config):
             return False
+
+        # access fields from the .ini file as named properties in self.config, e.g.
+        # an .ini field named host is accessed as self.config['host']
 
         self.pointer=utils.read_file_ptr(self.config)
                         
@@ -46,7 +48,7 @@ class AdapterOutput(cfg.BaseOutput):
                 'data'   : record data
             }
             
-            Use feed.parse_record(record) to parse the record. Ot returns list of fields:
+            Use feed.parse_record(record) to parse the record. It returns list of fields:
             {
                 'code'   : <field code> # see multichain.py for the list of fields and field types
                 'length' : field length
@@ -57,16 +59,43 @@ class AdapterOutput(cfg.BaseOutput):
             }
                        
             ptr - feed read pointer - tuple ( file id, offset in file )
-            
-            See dump.py for example.
         """
-# Process records here
+
+        # Process records here
         
+        for record in records:
+            event=feed.parse_record(record)
+            
+            if not self.process_event(event):
+                utils.log_error("Couldn't process event {code:02x} at ({file:4d}, {offset:08x})".format(code=record['code'],file=record['file'],offset=record['offset']))
+                return False
+                
         self.pointer=ptr
         
         return utils.write_file_ptr(self.config,ptr)
         
         
+    def process_event(self,event):
+        if event.code == multichain.event_block_add_start:
+            # process block add event 
+        elif event.code == multichain.event_block_remove_start:
+            # process block remove event 
+        elif event.code == multichain.event_stream_item_received:
+            # process stream item received event
+        elif event.code == multichain.event_stream_item_confirmed:
+            # process stream item confirmed event
+        elif event.code == multichain.event_stream_item_unconfirmed:
+            # process stream item unconfirmed event
+        elif event.code == multichain.event_stream_item_invalid:
+            # process stream item invalid event
+        elif event.code == multichain.event_stream_offchain_available:
+            # process stream offchain available event
+        elif event.code == multichain.event_stream_offchain_purged:
+            # process stream offchain purged event
+            
+        return True
+
+
     def close(self):
         """ Close this object. """
         return True

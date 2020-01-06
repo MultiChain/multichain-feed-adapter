@@ -28,8 +28,7 @@ class AdapterOutput(cfg.BaseOutput):
         if not self.check_pointer_table():
             utils.log_error("Couldn't create read pointers table")
             return False
-        
-        
+              
         row=self.fetch_row(
             "SELECT file, pos FROM pointers WHERE pointer=%s;",
             (self.ptr_name,)
