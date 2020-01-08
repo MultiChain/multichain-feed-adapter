@@ -11,7 +11,7 @@ The [MultiChain Feed Adapter](https://github.com/MultiChain/multichain-feed-adap
 
 
 System Requirements
-===================
+-------------------
 
 * Any modern 64-bit Linux.
 * MultiChain Enterprise 2.0.4 Demo/Beta 1 or later.
