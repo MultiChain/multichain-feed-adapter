@@ -20,7 +20,7 @@ System Requirements
 
 
 Getting Started
-===============
+---------------
 
 1. Make sure you are running [MultiChain Enterprise](https://www.multichain.com/enterprise/) (you can [download a free demo](https://www.multichain.com/download-enterprise/)).
 
@@ -68,7 +68,7 @@ Getting Started
 
 
 MultiChain Feed APIs
-====================
+--------------------
 	
 Below is a brief summary of the JSON-RPC APIs in MultiChain Enterprise relating to feeds. There is more detailed [API documentation online](https://www.multichain.com/developers/json-rpc-api/) online, or type `help <command>` in the MultiChain command line.
 
@@ -80,7 +80,7 @@ Below is a brief summary of the JSON-RPC APIs in MultiChain Enterprise relating 
 
 
 Controlling Disk Usage
-======================
+----------------------
 
 For maximum reliability and durability, a MultiChain feed is an append-only log, which is written to disk in consecutively numbered files. As a result, over time, a feed can use up considerable disk space. In order to reduce disk usage, the following steps can be taken:
 
@@ -90,7 +90,7 @@ For maximum reliability and durability, a MultiChain feed is an append-only log,
 
 
 Modifying the Adapter
-=====================
+---------------------
 
 To add support for a new database, make a copy of `output-usertype.py` called `output-whatever.py` (replacing `whatever` with your database name) and start modifying it. There are comments within the file which provide guidance on where to add your code for initializing the database and processing the different types of events. You can also read the code for other databases such as `output-postgres.py` to see detailed examples.
 
