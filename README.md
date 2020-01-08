@@ -1,9 +1,9 @@
 MultiChain Feed Adapter
 =======================
 
-[MultiChain Enterprise](https://www.multichain.com/enterprise/) feeds are real-time event logs that make it easy to reflect the contents of a blockchain to any external database. A feed can contain information about the blocks in the chain, an
+[MultiChain Enterprise](https://www.multichain.com/enterprise/) feeds are real-time event logs that make it easy to reflect the contents of a blockchain to any external database. A feed can contain information about the blocks in the chain, and the items in one or more streams (including unconfirmed transactions).
 
- the items in one or more streams (including unconfirmed transactions). The [MultiChain Feed Adapter](https://github.com/MultiChain/multichain-feed-adapter) is a free and open source Python tool for reading these feeds and writing to several popular databases.
+The [MultiChain Feed Adapter](https://github.com/MultiChain/multichain-feed-adapter) is a free and open source Python tool for reading these feeds and writing to several popular databases.
 
 This adapter is licensed under the 3-clause BSD license, which is very liberal. You are free to fork and modify this adapter for your own purposes, including:
 
