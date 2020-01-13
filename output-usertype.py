@@ -7,6 +7,8 @@
 import cfg
 import utils
 import readconf
+import multichain
+import feed
 
 class AdapterOutput(cfg.BaseOutput):
     """ User defined output template class. """
@@ -30,7 +32,7 @@ class AdapterOutput(cfg.BaseOutput):
             return False
 
         # access fields from the .ini file as named properties in self.config, e.g.
-        # an .ini field named host is accessed as self.config['host']
+        # an .ini field named host is accessed as self.config['host']
 
         self.pointer=utils.read_file_ptr(self.config)
                         
@@ -48,7 +50,12 @@ class AdapterOutput(cfg.BaseOutput):
                 'data'   : record data
             }
             
-            Use feed.parse_record(record) to parse the record. It returns list of fields:
+            Use feed.parse_record(record) to parse the record. 
+            
+            feed.parse_record(record) returns parsed event object. The list of the fields depends on the event type.
+                See Event* classes in multichain.py for details.            
+            
+            feed.parse_record(record,False) returns list of fields:
             {
                 'code'   : <field code> # see multichain.py for the list of fields and field types
                 'length' : field length
@@ -78,20 +85,28 @@ class AdapterOutput(cfg.BaseOutput):
     def process_event(self,event):
         if event.code == multichain.event_block_add_start:
             # process block add event 
+            pass
         elif event.code == multichain.event_block_remove_start:
             # process block remove event 
+            pass
         elif event.code == multichain.event_stream_item_received:
             # process stream item received event
+            pass
         elif event.code == multichain.event_stream_item_confirmed:
             # process stream item confirmed event
+            pass
         elif event.code == multichain.event_stream_item_unconfirmed:
             # process stream item unconfirmed event
+            pass
         elif event.code == multichain.event_stream_item_invalid:
             # process stream item invalid event
+            pass
         elif event.code == multichain.event_stream_offchain_available:
             # process stream offchain available event
+            pass
         elif event.code == multichain.event_stream_offchain_purged:
             # process stream offchain purged event
+            pass
             
         return True
 
