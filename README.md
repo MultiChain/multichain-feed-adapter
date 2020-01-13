@@ -94,7 +94,7 @@ Modifying the Adapter
 
 To add support for a new database, make a copy of `output-usertype.py` called `output-whatever.py` (replacing `whatever` with your database name) and start modifying it. There are comments within the file which provide guidance on where to add your code for initializing the database and processing the different types of events.
 
-Your code must be able to cope with duplicate blocks or stream items in a feed. This can happen because of a node stopping and restarting. You can search for `ON CONFLICT` in `output-postgres.py` to see detailed examples of how to deal with these duplicates, by updating certain database columns only.
+Your code must be able to cope with duplicate blocks or stream items in a feed. This can happen because of a node stopping and restarting, or a requested feed or blockchain rescan. You can search for `ON CONFLICT` in `output-postgres.py` to see detailed examples of how to deal with these duplicates, by updating certain database columns only.
 
 Activate your `output-whatever.py` file in an output section of the `.ini` file by setting `type = whatever`. All other parameters in the same output section are available to your code. If the `type` in the `.ini` file contains a hyphen (`-`), only the text before the hyphen determines the `output-...py` file loaded.
 
