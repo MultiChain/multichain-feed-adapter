@@ -186,7 +186,7 @@ def check_db_config(config):
         
     config['sql'] = None
     if not is_missing(config,'sql_output'):
-        config['sql']=utils.file_dir_name(config['sql']) + utils.file_file_name(config['sql'])
+        config['sql']=utils.file_dir_name(config['sql_output']) + utils.file_file_name(config['sql_output'])
         config['dir']=utils.file_dir_name(config['sql'])
         if not utils.check_directory(config['dir']):
             utils.print_error("Couldn't create directory for output " + config["name"])
