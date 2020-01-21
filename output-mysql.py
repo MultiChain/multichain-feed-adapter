@@ -25,6 +25,9 @@ class AdapterOutput(cfg.BaseOutput):
         if not readconf.check_db_config(self.config):
             return False
             
+        if readconf.is_missing(self.config,'port'):
+            self.config['port']=3306
+            
         self.sql_file=self.config['sql']
         if not self.check_pointer_table():
             utils.log_error("Couldn't create read pointers table")
@@ -100,11 +103,16 @@ class AdapterOutput(cfg.BaseOutput):
         return self.execute_creates(
             "CREATE TABLE IF NOT EXISTS "+table_name+"""(id VARBINARY(20) PRIMARY KEY,txid VARBINARY(32),vout INTEGER,flags INTEGER,
                                                          size BIGINT,format VARCHAR(8),binary_data BLOB,text_data TEXT,json_data TEXT,dataref VARBINARY(40),
-                                                         received TIMESTAMP,confirmed TIMESTAMP NULL,blockhash VARBINARY(32),blockheight INTEGER,blockpos INTEGER,index(blockpos)) CHARACTER SET utf8; """
+                                                         received TIMESTAMP,confirmed TIMESTAMP NULL,blockhash VARBINARY(32),blockheight INTEGER,blockpos INTEGER,
+                                                         index """ + table_name + "_pos_idx (blockheight,blockpos)) CHARACTER SET utf8; """
         ) and self.execute_creates(
-             "CREATE TABLE IF NOT EXISTS "+table_name+"_key (id VARBINARY(20),itemkey VARCHAR(256),PRIMARY KEY(id,itemkey),index(itemkey),FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
+             "CREATE TABLE IF NOT EXISTS "+table_name+"_key (id VARBINARY(20),itemkey VARCHAR(256),PRIMARY KEY (id,itemkey),"+
+                                                      "index "+table_name+"_key_idx (itemkey),"+
+                                                      "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
-             "CREATE TABLE IF NOT EXISTS "+table_name+"_pub (id VARBINARY(20),publisher VARCHAR(256),PRIMARY KEY(id,publisher),index(publisher),FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
+             "CREATE TABLE IF NOT EXISTS "+table_name+"_pub (id VARBINARY(20),publisher VARCHAR(256),PRIMARY KEY (id,publisher),"+
+                                                      "index "+table_name+"_pub_idx (publisher),"+
+                                                      "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
             "INSERT INTO streams (dbtable, stream) VALUES (%s,%s) ON DUPLICATE KEY UPDATE dbtable=dbtable",
             (table_name,stream_name)
@@ -144,6 +152,8 @@ class AdapterOutput(cfg.BaseOutput):
     def event_stream_item_received_keys(self,event):
         if event.keys is None:
             return True
+        
+# Not using INSERT IGNORE - this would hide other errors we want reported.
         
         for key in event.keys:
             if not self.execute_sql("INSERT INTO "+event.table+"_key (id,itemkey) VALUES (%s,%s) ON DUPLICATE KEY UPDATE id=id;",(event.id,key,)):
@@ -219,7 +229,7 @@ class AdapterOutput(cfg.BaseOutput):
         stream_name=event.stream
         
         if stream_name not in self.stream_table_names:
-            sanitized=sanitized_stream_name(stream_name)
+            sanitized=self.sanitized_stream_name(stream_name)
             table_name=None
             
             row=self.fetch_row(
@@ -312,7 +322,7 @@ class AdapterOutput(cfg.BaseOutput):
         return True
  
     def connect(self):
-        conn=MySQLdb.connect(host=self.config['host'],user=self.config['user'],passwd=self.config['password'],db=self.config['dbname'])
+        conn=MySQLdb.connect(host=self.config['host'],user=self.config['user'],passwd=self.config['password'],db=self.config['dbname'],port=self.config['port'])
         return conn        
  
     def fetch_row(self,sql,params=()):
@@ -413,17 +423,17 @@ class AdapterOutput(cfg.BaseOutput):
         return True
 
 
-def sanitized_stream_name(stream_name):
-    if stream_name == 'blocks':
-        return 'blocks_stream'
-    if stream_name == 'streams':
-        return 'streams_stream'
-    if stream_name == 'pointers':
-        return 'pointers_stream'
+    def sanitized_stream_name(self,stream_name):
+        if stream_name == 'blocks':
+            return 'blocks_stream'
+        if stream_name == 'streams':
+            return 'streams_stream'
+        if stream_name == 'pointers':
+            return 'pointers_stream'
+            
+        sanitized="".join([ c if c.isalnum() else "_" for c in stream_name ])
+        sanitized=sanitized.lower()
+        if not sanitized[0].isalpha():
+            sanitized = "ref_" + sanitized
         
-    sanitized="".join([ c if c.isalnum() else "_" for c in stream_name ])
-    sanitized=sanitized.lower()
-    if not sanitized[0].isalpha():
-        sanitized = "ref_" + sanitized
-    
-    return sanitized[0:20]
+        return sanitized[0:20]

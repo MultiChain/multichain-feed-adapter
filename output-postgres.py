@@ -204,7 +204,7 @@ class AdapterOutput(cfg.BaseOutput):
         stream_name=event.stream
         
         if stream_name not in self.stream_table_names:
-            sanitized=sanitized_stream_name(stream_name)
+            sanitized=self.sanitized_stream_name(stream_name)
             table_name=None
             
             row=self.fetch_row(
@@ -394,17 +394,17 @@ class AdapterOutput(cfg.BaseOutput):
         return True
 
 
-def sanitized_stream_name(stream_name):
-    if stream_name == 'blocks':
-        return 'blocks_stream'
-    if stream_name == 'streams':
-        return 'streams_stream'
-    if stream_name == 'pointers':
-        return 'pointers_stream'
+    def sanitized_stream_name(self,stream_name):
+        if stream_name == 'blocks':
+            return 'blocks_stream'
+        if stream_name == 'streams':
+            return 'streams_stream'
+        if stream_name == 'pointers':
+            return 'pointers_stream'
+            
+        sanitized="".join([ c if c.isalnum() else "_" for c in stream_name ])
+        sanitized=sanitized.lower()
+        if not sanitized[0].isalpha():
+            sanitized = "ref_" + sanitized
         
-    sanitized="".join([ c if c.isalnum() else "_" for c in stream_name ])
-    sanitized=sanitized.lower()
-    if not sanitized[0].isalpha():
-        sanitized = "ref_" + sanitized
-    
-    return sanitized[0:20]
+        return sanitized[0:20]
