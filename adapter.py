@@ -37,7 +37,8 @@ def initialize_outputs():
             
         try:
             py_mod = imp.load_source(mod_name, mod_file)
-        except:
+        except Exception as e:
+            utils.print_error(str(e))
             error_str="Unable to load module for output " + output
             utils.print_error(error_str)
             utils.log_error(error_str)
