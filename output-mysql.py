@@ -5,14 +5,14 @@
 
 
 import cfg
-import MySQLdb
+import pymysql
 import readconf
 import multichain
 import utils
 import feed
 
 import warnings
-warnings.filterwarnings("ignore", category = MySQLdb.Warning)
+warnings.filterwarnings("ignore", category = pymysql.Warning)
 
 class AdapterOutput(cfg.BaseOutput):
 
@@ -142,7 +142,7 @@ class AdapterOutput(cfg.BaseOutput):
     def event_stream_item_received(self,event):
         if not self.check_stream_table(event):
             return False
-        
+            
         return self.execute_sql(
             "INSERT INTO "+event.table+""" (id,txid,vout,flags,received,size,format,binary_data,text_data,json_data,dataref) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON DUPLICATE KEY UPDATE flags=%s,received=%s,binary_data=%s,text_data=%s,json_data=%s,dataref=%s;""",
@@ -150,12 +150,13 @@ class AdapterOutput(cfg.BaseOutput):
              event.flags,event.received,event.binary,event.text,event.json,event.dataref,)
         ) and self.event_stream_item_received_keys(event) and self.event_stream_item_received_publishers(event)
         
-   
+        
     # Not using INSERT IGNORE in the functions below because this would hide other errors we want reported.
         
     def event_stream_item_received_keys(self,event):
         if event.keys is None:
             return True
+        
         
         for key in event.keys:
             if not self.execute_sql("INSERT INTO "+event.table+"_key (id,itemkey) VALUES (%s,%s) ON DUPLICATE KEY UPDATE id=id;",(event.id,key,)):
@@ -163,7 +164,7 @@ class AdapterOutput(cfg.BaseOutput):
 
         return True
         
-    
+
     def event_stream_item_received_publishers(self,event):
         if event.publishers is None:
             return True
@@ -174,7 +175,7 @@ class AdapterOutput(cfg.BaseOutput):
 
         return True
         
-    
+        
     def event_stream_item_confirmed(self,event):
         if not self.check_stream_table(event):
             return False
@@ -325,17 +326,17 @@ class AdapterOutput(cfg.BaseOutput):
             
         return True
  
-    
-    def connect(self):
-        conn=MySQLdb.connect(host=self.config['host'],user=self.config['user'],passwd=self.config['password'],db=self.config['dbname'],port=self.config['port'])
-        return conn
  
-    
+    def connect(self):
+        conn=pymysql.connect(host=self.config['host'],user=self.config['user'],passwd=self.config['password'],db=self.config['dbname'],port=self.config['port'])
+        return conn
+        
+ 
     def fetch_row(self,sql,params=()):
         
         try:
             conn=self.connect()
-        except MySQLdb.Error as e:
+        except pymysql.Error as e:
             utils.log_error(str(e.args[1]))
             return None
                 
@@ -345,7 +346,7 @@ class AdapterOutput(cfg.BaseOutput):
             cur.execute(sql,params)
             if cur.rowcount > 0:
                 row = cur.fetchone()
-        except MySQLdb.Error as e:
+        except pymysql.Error as e:
             pass
             
         if conn is not None:
@@ -392,7 +393,7 @@ class AdapterOutput(cfg.BaseOutput):
                 conn.commit()
                 
             cur.close()
-        except MySQLdb.Error as e:
+        except pymysql.Error as e:
             utils.log_error(str(e.args[1]))
             result=False
         if conn is not None:
