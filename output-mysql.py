@@ -142,6 +142,7 @@ class AdapterOutput(cfg.BaseOutput):
     def event_stream_item_received(self,event):
         if not self.check_stream_table(event):
             return False
+        
         return self.execute_sql(
             "INSERT INTO "+event.table+""" (id,txid,vout,flags,received,size,format,binary_data,text_data,json_data,dataref) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             ON DUPLICATE KEY UPDATE flags=%s,received=%s,binary_data=%s,text_data=%s,json_data=%s,dataref=%s;""",
@@ -149,11 +150,12 @@ class AdapterOutput(cfg.BaseOutput):
              event.flags,event.received,event.binary,event.text,event.json,event.dataref,)
         ) and self.event_stream_item_received_keys(event) and self.event_stream_item_received_publishers(event)
         
+   
+    # Not using INSERT IGNORE in the functions below because this would hide other errors we want reported.
+        
     def event_stream_item_received_keys(self,event):
         if event.keys is None:
             return True
-        
-# Not using INSERT IGNORE - this would hide other errors we want reported.
         
         for key in event.keys:
             if not self.execute_sql("INSERT INTO "+event.table+"_key (id,itemkey) VALUES (%s,%s) ON DUPLICATE KEY UPDATE id=id;",(event.id,key,)):
@@ -161,6 +163,7 @@ class AdapterOutput(cfg.BaseOutput):
 
         return True
         
+    
     def event_stream_item_received_publishers(self,event):
         if event.publishers is None:
             return True
@@ -171,6 +174,7 @@ class AdapterOutput(cfg.BaseOutput):
 
         return True
         
+    
     def event_stream_item_confirmed(self,event):
         if not self.check_stream_table(event):
             return False
@@ -321,10 +325,12 @@ class AdapterOutput(cfg.BaseOutput):
             
         return True
  
+    
     def connect(self):
         conn=MySQLdb.connect(host=self.config['host'],user=self.config['user'],passwd=self.config['password'],db=self.config['dbname'],port=self.config['port'])
-        return conn        
+        return conn
  
+    
     def fetch_row(self,sql,params=()):
         
         try:
@@ -350,7 +356,7 @@ class AdapterOutput(cfg.BaseOutput):
 
     def execute_transaction(self,sqls):
         
-        result =True
+        result=True
         if len(sqls) == 0:
             return result
 
