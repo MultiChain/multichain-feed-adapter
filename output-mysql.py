@@ -106,11 +106,11 @@ class AdapterOutput(cfg.BaseOutput):
                                                          received TIMESTAMP,confirmed TIMESTAMP NULL,blockhash VARBINARY(32),blockheight INTEGER,blockpos INTEGER,
                                                          index """ + table_name + "_pos_idx (blockheight,blockpos)) CHARACTER SET utf8; """
         ) and self.execute_creates(
-             "CREATE TABLE IF NOT EXISTS "+table_name+"_key (id VARBINARY(20),itemkey VARCHAR(256),PRIMARY KEY (id,itemkey),"+
-                                                      "index "+table_name+"_key_idx (itemkey),"+
+             "CREATE TABLE IF NOT EXISTS "+table_name+"_key (id VARBINARY(20),itemkey VARCHAR(256),PRIMARY KEY (id,itemkey(255)),"+
+                                                      "index "+table_name+"_key_idx (itemkey(255)),"+
                                                       "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
-             "CREATE TABLE IF NOT EXISTS "+table_name+"_pub (id VARBINARY(20),publisher VARCHAR(256),PRIMARY KEY (id,publisher),"+
+             "CREATE TABLE IF NOT EXISTS "+table_name+"_pub (id VARBINARY(20),publisher VARCHAR(190),PRIMARY KEY (id,publisher),"+
                                                       "index "+table_name+"_pub_idx (publisher),"+
                                                       "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
