@@ -95,22 +95,22 @@ class AdapterOutput(cfg.BaseOutput):
         
     def create_blocks_table(self):
         return self.execute_creates(
-            "CREATE TABLE IF NOT EXISTS blocks (hash VARBINARY(32) PRIMARY KEY,height INTEGER,confirmed TIMESTAMP,txcount INTEGER,size INTEGER,miner VARCHAR(64), index(height)) CHARACTER SET utf8;"
+            "CREATE TABLE IF NOT EXISTS blocks (hash BINARY(32) PRIMARY KEY,height INTEGER,confirmed TIMESTAMP NOT NULL,txcount INTEGER,size INTEGER,miner VARCHAR(64), index blocks_height_idx (height)) CHARACTER SET utf8;"
         )
        
             
     def create_stream_table(self,stream_name,table_name):
         return self.execute_creates(
-            "CREATE TABLE IF NOT EXISTS "+table_name+"""(id VARBINARY(20) PRIMARY KEY,txid VARBINARY(32),vout INTEGER,flags INTEGER,
-                                                         size BIGINT,format VARCHAR(8),binary_data BLOB,text_data TEXT,json_data TEXT,dataref VARBINARY(40),
-                                                         received TIMESTAMP,confirmed TIMESTAMP NULL,blockhash VARBINARY(32),blockheight INTEGER,blockpos INTEGER,
+            "CREATE TABLE IF NOT EXISTS "+table_name+"""(id BINARY(20) PRIMARY KEY,txid BINARY(32),vout INTEGER,flags INTEGER,
+                                                         size BIGINT,format VARCHAR(8),binary_data LONGBLOB,text_data TEXT,json_data LONGTEXT,dataref BINARY(40),
+                                                         received TIMESTAMP,confirmed TIMESTAMP NULL,blockhash BINARY(32),blockheight INTEGER,blockpos INTEGER,
                                                          index """ + table_name + "_pos_idx (blockheight,blockpos)) CHARACTER SET utf8; """
         ) and self.execute_creates(
-             "CREATE TABLE IF NOT EXISTS "+table_name+"_key (id VARBINARY(20),itemkey VARCHAR(256),PRIMARY KEY (id,itemkey(255)),"+
+             "CREATE TABLE IF NOT EXISTS "+table_name+"_key (id BINARY(20) NOT NULL,itemkey VARCHAR(256) NOT NULL,PRIMARY KEY (id,itemkey(255)),"+
                                                       "index "+table_name+"_key_idx (itemkey(255)),"+
                                                       "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
-             "CREATE TABLE IF NOT EXISTS "+table_name+"_pub (id VARBINARY(20),publisher VARCHAR(190),PRIMARY KEY (id,publisher),"+
+             "CREATE TABLE IF NOT EXISTS "+table_name+"_pub (id BINARY(20) NOT NULL,publisher VARCHAR(190) NOT NULL,PRIMARY KEY (id,publisher),"+
                                                       "index "+table_name+"_pub_idx (publisher),"+
                                                       "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
@@ -181,7 +181,7 @@ class AdapterOutput(cfg.BaseOutput):
             return False
             
         return self.execute_sql(
-            "UPDATE "+event.table+" SET blockhash=%s,blockheight=%s,blockpos=%s,confirmed=%s,dataref=COALESCE(%s,dataref) WHERE id=%s",
+            "UPDATE "+event.table+" SET blockhash=%s,blockheight=%s,blockpos=%s,confirmed=%s,dataref=COALESCE(%s,dataref) WHERE id=%s;",
             (event.hash,event.height,event.offset,event.time,event.dataref,event.id,)
         )
 
@@ -191,7 +191,7 @@ class AdapterOutput(cfg.BaseOutput):
             return False
             
         return self.execute_sql(
-            "UPDATE "+event.table+" SET blockhash=NULL,blockheight=NULL,blockpos=NULL,confirmed=NULL WHERE id=%s",
+            "UPDATE "+event.table+" SET blockhash=NULL,blockheight=NULL,blockpos=NULL,confirmed=NULL WHERE id=%s;",
             (event.id,)
         )
 
@@ -211,7 +211,7 @@ class AdapterOutput(cfg.BaseOutput):
             return False
             
         return self.execute_sql(
-            "UPDATE "+event.table+" SET binary_data=%s,text_data=%s,json_data=%s,flags=%s,received=%s,dataref=COALESCE(%s,dataref) WHERE id=%s",
+            "UPDATE "+event.table+" SET binary_data=%s,text_data=%s,json_data=%s,flags=%s,received=%s,dataref=COALESCE(%s,dataref) WHERE id=%s;",
             (event.binary,event.text,event.json,event.flags,event.received,event.dataref,event.id,)
         )
 
@@ -221,7 +221,7 @@ class AdapterOutput(cfg.BaseOutput):
             return False
             
         return self.execute_sql(
-            "UPDATE "+event.table+" SET binary_data=NULL,text_data=NULL,json_data=NULL,flags=flags & 254,dataref=NULL WHERE id=%s",
+            "UPDATE "+event.table+" SET binary_data=NULL,text_data=NULL,json_data=NULL,flags=flags & 254,dataref=NULL WHERE id=%s;",
             (event.id,)
         )
 
@@ -355,6 +355,22 @@ class AdapterOutput(cfg.BaseOutput):
         return row
 
 
+    def replace_sql_binaries(self,raw_sql):                
+        params=()
+        head=""
+        tail=raw_sql[0]
+        for param in raw_sql[1]:
+            parts = tail.split("%s",1)
+            head += parts[0]
+            if isinstance(param, bytes):
+                head += "UNHEX('" + param.hex() + "')"
+            else:
+                head += "%s"
+                params += (param,)
+            tail = parts[1]
+        return (head+tail,params)
+
+        
     def execute_transaction(self,sqls):
         
         result=True
@@ -371,23 +387,24 @@ class AdapterOutput(cfg.BaseOutput):
             conn=self.connect()
             cur=conn.cursor()
             
-            for sql in sqls:
-                if sql == "BEGIN;" or sql == "COMMIT;":
+            for raw_sql in sqls:
+                if raw_sql == "BEGIN;" or raw_sql == "COMMIT;":
                     if f is not None:
-                        f.write (str(sql,'utf-8') + "\n")
+                        f.write (str(raw_sql,'utf-8') + "\n")
                     conn.commit()
                     commit_required=False
                 else:
-                    if isinstance(sql, tuple):
+                    if isinstance(raw_sql, tuple):
+                        sql=self.replace_sql_binaries(raw_sql)
                         cur.execute(sql[0],tuple(sql[1]))
                         if f is not None:
-                            f.write (str(cur._last_executed)+ "\n")
-#                            f.write (str(cur._last_executed,'utf-8')+ "\n")
+                            f.write (cur._last_executed)
                             f.write ("\n")
                     else:
-                        if f is not None:
-                            f.write (str(cur._last_executed,'utf-8')+ "\n")
                         cur.execute(sql)
+                        if f is not None:
+                            f.write (cur._last_executed)
+                            f.write ("\n")
                     commit_required=True
             if commit_required:
                 conn.commit()
@@ -444,3 +461,4 @@ class AdapterOutput(cfg.BaseOutput):
             sanitized = "ref_" + sanitized
         
         return sanitized[0:20]
+    

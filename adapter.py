@@ -62,7 +62,7 @@ def initialize_outputs():
     for output1 in cfg.outputs:
         for output2 in cfg.outputs:
             if output1.name != output2.name:
-                for param in ["ptr","out","pointer"]:
+                for param in ["ptr","out"]:
                     if (param in output1.config) and (param in output2.config):
                         if output1.config[param] == output2.config[param]:
                             error_str="Conflicting parameter {} in outputs {} and {}".format(param, output1, output2)
