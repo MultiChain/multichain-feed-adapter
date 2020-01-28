@@ -356,6 +356,7 @@ class AdapterOutput(cfg.BaseOutput):
 
 
     def replace_sql_binaries(self,raw_sql):                
+        toHex = lambda x:''.join(format(c, '02x') for c in x)
         params=()
         head=""
         tail=raw_sql[0]
@@ -363,7 +364,7 @@ class AdapterOutput(cfg.BaseOutput):
             parts = tail.split("%s",1)
             head += parts[0]
             if isinstance(param, bytes):
-                head += "UNHEX('" + param.hex() + "')"
+                head += "UNHEX('" + toHex(param) + "')"
             else:
                 head += "%s"
                 params += (param,)
