@@ -95,24 +95,24 @@ class AdapterOutput(cfg.BaseOutput):
         
     def create_blocks_table(self):
         return self.execute_creates(
-            "CREATE TABLE IF NOT EXISTS blocks (hash BINARY(32) PRIMARY KEY,height INTEGER,confirmed TIMESTAMP NOT NULL,txcount INTEGER,size INTEGER,miner VARCHAR(64), index blocks_height_idx (height)) CHARACTER SET utf8;"
+            "CREATE TABLE IF NOT EXISTS blocks (hash BINARY(32) PRIMARY KEY,height INTEGER,confirmed TIMESTAMP NULL,txcount INTEGER,size INTEGER,miner VARCHAR(64), index blocks_height_idx (height)) CHARACTER SET utf8;"
         )
        
             
     def create_stream_table(self,stream_name,table_name):
         return self.execute_creates(
             "CREATE TABLE IF NOT EXISTS "+table_name+"""(id BINARY(20) PRIMARY KEY,txid BINARY(32),vout INTEGER,flags INTEGER,
-                                                         size BIGINT,format VARCHAR(8),binary_data LONGBLOB,text_data TEXT,json_data LONGTEXT,dataref BINARY(40),
-                                                         received TIMESTAMP,confirmed TIMESTAMP NULL,blockhash BINARY(32),blockheight INTEGER,blockpos INTEGER,
+                                                         size BIGINT,format VARCHAR(8),binary_data LONGBLOB,text_data LONGTEXT,json_data LONGTEXT,dataref BINARY(40),
+                                                         received TIMESTAMP NULL,confirmed TIMESTAMP NULL,blockhash BINARY(32),blockheight INTEGER,blockpos INTEGER,
                                                          index """ + table_name + "_pos_idx (blockheight,blockpos)) CHARACTER SET utf8; """
         ) and self.execute_creates(
              "CREATE TABLE IF NOT EXISTS "+table_name+"_key (id BINARY(20) NOT NULL,itemkey VARCHAR(256) NOT NULL,PRIMARY KEY (id,itemkey(255)),"+
                                                       "index "+table_name+"_key_idx (itemkey(255)),"+
-                                                      "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
+                                                      "CONSTRAINT "+table_name+"_key_fk_id FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
              "CREATE TABLE IF NOT EXISTS "+table_name+"_pub (id BINARY(20) NOT NULL,publisher VARCHAR(190) NOT NULL,PRIMARY KEY (id,publisher),"+
                                                       "index "+table_name+"_pub_idx (publisher),"+
-                                                      "FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
+                                                      "CONSTRAINT "+table_name+"_pub_fk_id FOREIGN KEY (id) REFERENCES "+table_name+" (id) ON DELETE CASCADE) CHARACTER SET utf8;"
         ) and self.execute_creates(
             "INSERT INTO streams (dbtable, stream) VALUES (%s,%s) ON DUPLICATE KEY UPDATE dbtable=dbtable",
             (table_name,stream_name)
