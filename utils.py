@@ -27,9 +27,9 @@ def bytes_to_int32(data):
 def bytes_to_int64(data):
     return struct.unpack('q', data)[0]
 
-def bytes_to_hex(data, offset, length):
+def bytes_to_hex(data):
     toHex = lambda x:''.join(format(c, '02x') for c in x)
-    return toHex(data[offset : (offset+length)])
+    return toHex(data)
 
 def print_error(msg):
     sys.stderr.write(msg + "\n")

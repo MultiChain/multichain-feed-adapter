@@ -42,6 +42,7 @@ def initialize_outputs():
             error_str="Unable to load module for output " + output
             utils.print_error(error_str)
             utils.log_error(error_str)
+            return False
             
         if hasattr(py_mod, "AdapterOutput"):
             output_object = getattr(py_mod, "AdapterOutput")(output)
