@@ -310,24 +310,7 @@ class AdapterOutput(cfg.BaseOutput):
     def getdb(self,conn):
         return conn[self.config['dbname']]
         
- 
-    def replace_sql_binaries(self,raw_sql):                
-        toHex = lambda x:''.join(format(c, '02x') for c in x)
-        params=()
-        head=""
-        tail=raw_sql[0]
-        for param in raw_sql[1]:
-            parts = tail.split("%s",1)
-            head += parts[0]
-            if isinstance(param, bytes):
-                head += "UNHEX('" + toHex(param) + "')"
-            else:
-                head += "%s"
-                params += (param,)
-            tail = parts[1]
-        return (head+tail,params)
-
-        
+         
     def execute_transaction(self,commands):
         
         result=True
