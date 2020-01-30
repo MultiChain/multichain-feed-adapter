@@ -167,7 +167,7 @@ def check_file_config(config):
     return True
 
 
-def check_db_config(config):
+def check_db_config(config,allow_missing=False):
     
     if is_missing(config,'host'):
         config['host']='127.0.0.1'
@@ -175,11 +175,17 @@ def check_db_config(config):
         utils.print_error("Missing DB name")
         return False
     if is_missing(config,'user'):
-        utils.print_error("Missing DB user")
-        return False
+        if allow_missing:
+            config['user']=None
+        else:
+            utils.print_error("Missing DB user")
+            return False
     if is_missing(config,'password'):
-        utils.print_error("Missing DB password")
-        return False
+        if allow_missing:
+            config['password']=None
+        else:
+            utils.print_error("Missing DB password")
+            return False
     if is_missing(config,'pointer'):
         utils.print_error("Missing DB pointer")
         return False

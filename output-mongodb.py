@@ -23,7 +23,7 @@ class AdapterOutput(cfg.BaseOutput):
         self.stream_table_names = {}
         self.checked_tables = {}
         
-        if not readconf.check_db_config(self.config):
+        if not readconf.check_db_config(self.config,True):
             return False
             
         if readconf.is_missing(self.config,'port'):
@@ -99,8 +99,8 @@ class AdapterOutput(cfg.BaseOutput):
             {"fields":[("keys",pymongo.ASCENDING)],"name":table_name+"_key_idx","unique":False},
             {"fields":[("publishers",pymongo.ASCENDING)],"name":table_name+"_pub_idx","unique":False},
             {"fields":[("blockheight",pymongo.ASCENDING),("blockpos",pymongo.ASCENDING)],"name":table_name+"_pos_idx","unique":False}]
-        ) and self.execute_upsert(
-            "streams",{"stream":stream_name},{"stream":stream_name},{"dbtable":table_name},False
+        ) and self.execute_command(
+            "streams",{"stream":stream_name},{"stream":stream_name},{"collection":table_name}
         )
     
     
@@ -143,10 +143,9 @@ class AdapterOutput(cfg.BaseOutput):
         if not self.check_stream_table(event):
             return False
             
-        return self.execute_upsert(
+        return self.execute_update(
             event.table,
             {"id":event.id},
-            {},
             {"blockhash":event.hash,"blockheight":event.height,"blockpos":event.offset,"confirmed":event.time,"dataref":event.dataref},
         )
         
@@ -156,11 +155,9 @@ class AdapterOutput(cfg.BaseOutput):
         if not self.check_stream_table(event):
             return False
             
-        return self.execute_upsert(
+        return self.execute_unset(
             event.table,
             {"id":event.id},
-            {},
-            {},
             {"blockhash":None,"blockheight":None,"blockpos":None,"confirmed":None},
         )
 
@@ -179,10 +176,9 @@ class AdapterOutput(cfg.BaseOutput):
         if not self.check_stream_table(event):
             return False
             
-        return self.execute_upsert(
+        return self.execute_update(
             event.table,
             {"id":event.id},
-            {},
             {"flags":event.flags,"received":event.received,"binary_data":event.binary,"text_data":event.text,"json_data":event.json,"dataref":event.dataref}
         )
         
@@ -198,14 +194,16 @@ class AdapterOutput(cfg.BaseOutput):
             return False
 
         if "flags" not in document:
-            utils.log_error("Annot finf flags field for purged document")
+            utils.log_error("Cannot find flags field for purged document")
             return False
             
-        return self.execute_upsert(
+        return self.execute_update(
             event.table,
             {"id":event.id},
-            {},
-            {"flags": (document["flags"] & 254)},
+            {"flags": (document["flags"] & 254)}
+        ) and self.execute_unset(
+            event.table,
+            {"id":event.id},
             {"binary_data":None,"text_data":None,"json_data":None,"dataref":None},
         )
         
@@ -223,9 +221,9 @@ class AdapterOutput(cfg.BaseOutput):
             
             document=self.fetch_document("streams",{"stream":stream_name})
             if document is not None:
-                if "dbtable" not in document:
+                if "collection" not in document:
                     return False
-                table_name=document["dbtable"]
+                table_name=document["collection"]
                     
             if table_name is None:
                 for ext in range(0,50):
@@ -233,7 +231,7 @@ class AdapterOutput(cfg.BaseOutput):
                     if ext > 0:
                         try_name += "_{ext:02d}".format(ext = ext)
                         
-                    document=self.fetch_document("streams",{"dbtable":try_name})
+                    document=self.fetch_document("streams",{"collection":try_name})
                     if document is None:
                         table_name=try_name
                         break
@@ -303,7 +301,15 @@ class AdapterOutput(cfg.BaseOutput):
  
  
     def connect(self):
-        conn=pymongo.MongoClient("mongodb://"+self.config['host']+":"+str(self.config['port']),username=self.config['user'],password=self.config['password'],authSource=self.config['dbname'])
+        conn_string="mongodb://"+self.config['host']+":"+str(self.config['port'])
+        if self.config['user'] is not None:
+            if self.config['password'] is not None:
+                conn=pymongo.MongoClient(conn_string,username=self.config['user'],password=self.config['password'],authSource=self.config['dbname'])
+            else:
+                conn=pymongo.MongoClient(conn_string,username=self.config['user'],authSource=self.config['dbname'])
+        else:
+            conn=pymongo.MongoClient(conn_string)
+            
         return conn
     
 
@@ -323,11 +329,7 @@ class AdapterOutput(cfg.BaseOutput):
             db=self.getdb(conn)
             
             for command in commands:
-                if len(command) == 5:                                          # UPSERT
-                    self.execute_update(db,command[0],command[1],command[2],command[3],command[4])
-                elif len(command) == 2:                                        # DELETE 
-                    coll=db[command[0]]
-                    coll.delete_one(self.transform(command[1]))
+                self.execute_mongodb_command(db,command)
                 
         except pymongo.errors.PyMongoError as e:
             utils.log_error(str(e))
@@ -335,8 +337,7 @@ class AdapterOutput(cfg.BaseOutput):
             
         if conn is not None:
             conn.close()
-        
-            
+                    
         return result
 
 
@@ -375,31 +376,26 @@ class AdapterOutput(cfg.BaseOutput):
         return result
     
     
-    def execute_update(self,db,collection,query,insert_values,update_values,delete_values):
-        coll=db[collection]
-        if len(insert_values) != 0:
-            coll.update(self.transform(query),{"$set":self.transform(update_values),"$setOnInsert":self.transform(insert_values)},upsert=True)
-        else:
-            if len(delete_values) != 0:
-                if len(update_values) != 0:
-                    coll.update(self.transform(query),{"$set":self.transform(update_values),"$unset":delete_values},upsert=False)                        
-                else:
-                    coll.update(self.transform(query),{"$unset":delete_values},upsert=False)                                            
-            else:            
-                coll.update(self.transform(query),{"$set":self.transform(update_values)},upsert=False)                        
-
-
-    def execute_upsert(self,collection,query,insert_values,update_values,delete_values={},transactional=True):
-        if transactional:
-            self.commands.append((collection,query,insert_values,update_values,delete_values))
-            return True            
+    def execute_mongodb_command(self,db,command):
+        coll=db[command[1]]
+        
+        if command[0] == "upsert":
+            coll.update(self.transform(command[2]),{"$set":self.transform(command[4]),"$setOnInsert":self.transform(command[3])},upsert=True)
+        elif command[0] == "update":
+            coll.update(self.transform(command[2]),{"$set":self.transform(command[3])},upsert=False)
+        elif command[0] == "unset":
+            coll.update(self.transform(command[2]),{"$unset":command[3]},upsert=False)  
+        elif command[0] == "delete":
+            coll.delete_one(self.transform(command[2]))
             
+
+    def execute_command(self,collection,query,insert_values,update_values):
         result=True
         conn=None
         try:
             conn=self.connect()
             db=self.getdb(conn)
-            self.execute_update(db,collection,query,insert_values,update_values,delete_values)
+            self.execute_mongodb_command(db,("upsert",collection,query,insert_values,update_values))
         except pymongo.errors.PyMongoError as e:
             utils.log_error(str(e))
             result=False
@@ -408,13 +404,28 @@ class AdapterOutput(cfg.BaseOutput):
             conn.close()
             
         return result
-
-
-    def execute_delete(self,collection,query):
-        self.commands.append((collection,query))
+        
+        
+    def execute_upsert(self,collection,query,insert_values,update_values):
+        self.commands.append(("upsert",collection,query,insert_values,update_values))
         return True
 
+
+    def execute_update(self,collection,query,update_values):
+        self.commands.append(("update",collection,query,update_values))
+        return True
         
+
+    def execute_unset(self,collection,query,unset_values):
+        self.commands.append(("unset",collection,query,unset_values))
+        return True
+        
+        
+    def execute_delete(self,collection,query):
+        self.commands.append(("delete",collection,query))
+        return True
+
+                
     def fetch_document(self,collection,query):
         result=None
         try:
