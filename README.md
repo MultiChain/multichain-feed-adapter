@@ -16,7 +16,7 @@ System Requirements
 * Any modern 64-bit Linux.
 * MultiChain Enterprise 2.0.4 Demo/Beta 1 or later.
 * Python 3.
-* If using the built-in database support, one of: PostgreSQL 9.2 or later, MySQL (to come), MongoDB (to come).
+* If using the built-in database support, one of: PostgreSQL 9.2+, MySQL/MariaDB 5.5+, MongoDB 2.4+.
 
 
 Getting Started
@@ -52,7 +52,7 @@ Getting Started
 
 * Set `chain` to the name of your blockchain.
 * Set `feed` to the name of the feed you created.
-* Set the other parameters required for your target database.
+* Set any other parameters required for your target database.
 
 10. In the Linux command line, start the adapter to begin synchronizing the feed to the database:
 
