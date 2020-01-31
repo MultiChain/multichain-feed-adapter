@@ -5,7 +5,6 @@
 
 
 import cfg
-#import pymysql
 import pymongo
 import datetime
 import readconf
