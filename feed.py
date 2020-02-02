@@ -38,11 +38,7 @@ def read_records(ptr_list,next_ptr):
         if file_len >= offset + multichain.record_header_size + multichain.int4_full_field_size:
             
             rec_code=utils.file_read_char(f)
-            if rec_code == multichain.record_start_batch:
-                ignore=False
-                if rec_code == multichain.record_incomplete_batch:
-                    ignore=True
-                
+            if rec_code == multichain.record_start_batch:                
                 if utils.file_read_int32(f) != multichain.int4_full_field_size:
                     out_error(next_file,offset,"Start batch record size")
                     return None
@@ -72,8 +68,7 @@ def read_records(ptr_list,next_ptr):
                     record["data"]=rec_data
                     
                     count += 1
-                    if not ignore:
-                        records.append(record)
+                    records.append(record)
                     rec_code=utils.file_read_char(f)
                     rec_offset+=rec_len+multichain.record_header_size
                 
@@ -111,6 +106,22 @@ def read_records(ptr_list,next_ptr):
                     return None
                 f.read(rec_len)
                 offset += multichain.record_header_size + rec_len
+                
+            elif rec_code == multichain.record_incomplete_batch:
+                if utils.file_read_int32(f) != multichain.int4_full_field_size:
+                    out_error(next_file,offset,"Start batch record size")
+                    return None
+                if utils.file_read_char(f) != multichain.field_size:
+                    out_error(next_file,offset,"Start batch field type")
+                    return None
+                if utils.file_read_int32(f) != multichain.int4_field_size:
+                    out_error(next_file,offset,"Start batch field size")
+                    return None
+                    
+                batch_len=utils.file_read_int32(f)
+                utils.log_write("WARNING: Found incomplete batch in file " + str(next_file) + ", offset " + str(offset) + ", ignored: some data may be missing")
+                offset += batch_len                
+                
             else:
                 take_batch=False
         else:
