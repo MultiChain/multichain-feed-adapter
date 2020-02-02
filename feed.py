@@ -108,19 +108,8 @@ def read_records(ptr_list,next_ptr):
                 offset += multichain.record_header_size + rec_len
                 
             elif rec_code == multichain.record_incomplete_batch:
-                if utils.file_read_int32(f) != multichain.int4_full_field_size:
-                    out_error(next_file,offset,"Start batch record size")
-                    return None
-                if utils.file_read_char(f) != multichain.field_size:
-                    out_error(next_file,offset,"Start batch field type")
-                    return None
-                if utils.file_read_int32(f) != multichain.int4_field_size:
-                    out_error(next_file,offset,"Start batch field size")
-                    return None
-                    
-                batch_len=utils.file_read_int32(f)
-                utils.log_write("WARNING: Found incomplete batch in file " + str(next_file) + ", offset " + str(offset) + ", ignored: some data may be missing")
-                offset += batch_len                
+                utils.log_write("WARNING: Found incomplete batch in file " + str(next_file) + ", offset " + str(offset) + ": some data may be missing")
+                take_batch=False
                 
             else:
                 take_batch=False
