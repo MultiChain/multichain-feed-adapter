@@ -145,7 +145,7 @@ def term_signal_handler(signum, frame):
 def main(argv):
 
     if len(argv) == 0:
-        print ("""\nUsage: python 3-m mcfeedadapter config-file.ini ( stop | daemon )
+        print ("""\nUsage: python3 -m adapter config-file.ini ( stop | daemon )
 
 """ + adapter_app +""", version """ + adapter_version +"""
 
