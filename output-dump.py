@@ -25,6 +25,8 @@ event_names = {
               }
 
 field_names = {
+               multichain.field_error_code                : "Error code",
+               multichain.field_error_message             : "Error message",
                multichain.field_block_height              : "Block height",
                multichain.field_block_hash                : "Block hash",
                multichain.field_block_tx_count            : "Block Tx count",

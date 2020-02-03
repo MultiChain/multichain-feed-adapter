@@ -33,6 +33,9 @@ event_stream_offchain_purged                        = 0x35
 
 # MultiChain fields
 
+field_error_code                                    = 0x10
+field_error_message                                 = 0x11
+
 field_block_height                                  = 0x20
 field_block_hash                                    = 0x21
 field_block_tx_count                                = 0x22
@@ -68,6 +71,7 @@ binary_fields     = [
 integer_fields    = [
                      field_size,
                      field_file_id,
+                     field_error_code,
                      field_block_height,
                      field_block_tx_count,
                      field_block_time,
@@ -87,6 +91,7 @@ timestamp_fields  = [
 
 
 text_fields       = [
+                     field_error_message,
                      field_block_miner,
                      field_item_stream,
                      field_item_text,
