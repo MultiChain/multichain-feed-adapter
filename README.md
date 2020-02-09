@@ -1,20 +1,20 @@
 MultiChain Feed Adapter
 =======================
 
-[MultiChain Enterprise](https://www.multichain.com/enterprise/) feeds are real-time event logs that make it easy to reflect the contents of a blockchain to any external database. A feed can contain information about the blocks in the chain, and the items in one or more streams (including unconfirmed transactions).
+[MultiChain Enterprise](https://www.multichain.com/enterprise/) feeds are real-time binary logs that make it easy to reflect the contents of a blockchain to any external database. A feed can contain information about the blocks in the chain, and the items in one or more streams (including unconfirmed transactions). Detailed documentation of the [feed file format](https://www.multichain.com/developers/feed-file-format/) is available.
 
-The [MultiChain Feed Adapter](https://github.com/MultiChain/multichain-feed-adapter) is a free and open source Python tool for reading these feeds and writing to several popular databases. This adapter is licensed under the 3-clause BSD license, which is very liberal. You are free to fork and modify it for your own purposes, including:
+The [MultiChain Feed Adapter](https://github.com/MultiChain/multichain-feed-adapter) is a free and open source Python tool for reading a feed and writing to several popular databases. This adapter is licensed under the 3-clause BSD license, which is very liberal. You are free to fork and modify it for your own purposes, including:
 
 * Adding support for additional databases.
-* Modifying the code to only write some records to the database.
-* Adding logic to transform data before it is written.
+* Only writing some records to the database.
+* Transforming the data before it is written.
 
 
 System Requirements
 -------------------
 
 * Any modern 64-bit Linux.
-* MultiChain Enterprise 2.0.4 Demo/Beta 1 or later.
+* MultiChain Enterprise 2.0.5 Demo/Beta 1 or later.
 * Python 3.
 * If using the built-in database support, one of: PostgreSQL 9.2+, MySQL/MariaDB 5.5+, MongoDB 2.4+.
 
