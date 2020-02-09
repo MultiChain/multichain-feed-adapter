@@ -103,7 +103,7 @@ class AdapterOutput(cfg.BaseOutput):
             for field in fields:
                 value=field["value"]
                 if multichain.is_binary_field(field["code"]):
-                    value=value.hex()
+                    value=utils.bytes_to_hex(value)
                 field_str="";
                 if self.config['type'] == "dump":
                     field_str="   " + field_name(field["code"]) + ", length: " +  str(field["length"]) + ": " + str(value) + "\n"

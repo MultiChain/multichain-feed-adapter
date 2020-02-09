@@ -108,7 +108,6 @@ def read_records(ptr_list,next_ptr):
                 offset += multichain.record_header_size + rec_len
                 
             elif rec_code == multichain.record_incomplete_batch:
-                utils.log_write("WARNING: Found incomplete batch in file " + str(next_file) + ", offset " + str(offset) + ": some data may be missing")
                 take_batch=False
                 
             else:
