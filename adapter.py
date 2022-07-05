@@ -4,7 +4,6 @@
 # All rights reserved under BSD 3-clause license
 
 
-import imp
 import sys
 import signal
 import time
@@ -36,7 +35,15 @@ def initialize_outputs():
             return False
             
         try:
-            py_mod = imp.load_source(mod_name, mod_file)
+            if sys.version_info[1] >= 5:
+                import importlib.util
+                spec = importlib.util.spec_from_file_location(mod_name, mod_file)
+                py_mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(py_mod)
+            elif sys.version_info[1] < 5:
+                import importlib.machinery
+                loader = importlib.machinery.SourceFileLoader(mod_name, mod_file)
+                py_mod = loader.load_module()            
         except Exception as e:
             utils.print_error(str(e))
             error_str="Unable to load module for output " + output
